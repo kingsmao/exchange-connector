@@ -57,11 +57,6 @@ func NewSDK() *SDK {
 	}
 }
 
-// GetManager returns the underlying manager
-func (sdk *SDK) GetManager() *manager.Manager {
-	return sdk.manager
-}
-
 // GetExchangeConfigs returns all exchange configurations
 func (sdk *SDK) GetExchangeConfigs() []ExchangeConfig {
 	return sdk.exchangeConfigs

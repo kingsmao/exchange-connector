@@ -162,7 +162,7 @@ func TestSDKExchangeCreation(t *testing.T) {
 
 	t.Run("Create Binance Exchanges", func(t *testing.T) {
 		// 测试Binance现货
-		spotExchange := sdk.createBinanceExchange(schema.SPOT, sdk.manager.Cache())
+		spotExchange := sdk.createBinanceExchange(schema.SPOT, nil)
 		if spotExchange == nil {
 			t.Errorf("Failed to create Binance SPOT exchange")
 		} else {
@@ -175,7 +175,7 @@ func TestSDKExchangeCreation(t *testing.T) {
 		}
 
 		// 测试Binance U本位合约
-		usdtExchange := sdk.createBinanceExchange(schema.FUTURESUSDT, sdk.manager.Cache())
+		usdtExchange := sdk.createBinanceExchange(schema.FUTURESUSDT, nil)
 		if usdtExchange == nil {
 			t.Errorf("Failed to create Binance FUTURESUSDT exchange")
 		} else {
@@ -188,7 +188,7 @@ func TestSDKExchangeCreation(t *testing.T) {
 		}
 
 		// 测试Binance币本位合约
-		coinExchange := sdk.createBinanceExchange(schema.FUTURESCOIN, sdk.manager.Cache())
+		coinExchange := sdk.createBinanceExchange(schema.FUTURESCOIN, nil)
 		if coinExchange == nil {
 			t.Errorf("Failed to create Binance FUTURESCOIN exchange")
 		} else {
@@ -203,7 +203,7 @@ func TestSDKExchangeCreation(t *testing.T) {
 
 	t.Run("Create OKX Exchanges", func(t *testing.T) {
 		// 测试OKX现货
-		spotExchange := sdk.createOKXExchange(schema.SPOT, sdk.manager.Cache())
+		spotExchange := sdk.createOKXExchange(schema.SPOT, nil)
 		if spotExchange == nil {
 			t.Errorf("Failed to create OKX SPOT exchange")
 		} else {
@@ -216,7 +216,7 @@ func TestSDKExchangeCreation(t *testing.T) {
 		}
 
 		// 测试OKX U本位合约
-		usdtExchange := sdk.createOKXExchange(schema.FUTURESUSDT, sdk.manager.Cache())
+		usdtExchange := sdk.createOKXExchange(schema.FUTURESUSDT, nil)
 		if usdtExchange == nil {
 			t.Errorf("Failed to create OKX FUTURESUSDT exchange")
 		} else {
@@ -231,19 +231,19 @@ func TestSDKExchangeCreation(t *testing.T) {
 
 	t.Run("Create Other Exchanges", func(t *testing.T) {
 		// 测试Bybit现货
-		bybitExchange := sdk.createBybitExchange(schema.SPOT, sdk.manager.Cache())
+		bybitExchange := sdk.createBybitExchange(schema.SPOT, nil)
 		if bybitExchange == nil {
 			t.Errorf("Failed to create Bybit SPOT exchange")
 		}
 
 		// 测试Gate现货
-		gateExchange := sdk.createGateExchange(schema.SPOT, sdk.manager.Cache())
+		gateExchange := sdk.createGateExchange(schema.SPOT, nil)
 		if gateExchange == nil {
 			t.Errorf("Failed to create Gate SPOT exchange")
 		}
 
 		// 测试MEXC现货
-		mexcExchange := sdk.createMEXCExchange(schema.SPOT, sdk.manager.Cache())
+		mexcExchange := sdk.createMEXCExchange(schema.SPOT, nil)
 		if mexcExchange == nil {
 			t.Errorf("Failed to create MEXC SPOT exchange")
 		}
@@ -251,7 +251,7 @@ func TestSDKExchangeCreation(t *testing.T) {
 
 	t.Run("Test Unsupported Market Types", func(t *testing.T) {
 		// 测试不支持的市场类型
-		unsupportedExchange := sdk.createBinanceExchange("UNSUPPORTED", sdk.manager.Cache())
+		unsupportedExchange := sdk.createBinanceExchange("UNSUPPORTED", nil)
 		if unsupportedExchange != nil {
 			t.Errorf("Expected nil for unsupported market type, got %+v", unsupportedExchange)
 		}

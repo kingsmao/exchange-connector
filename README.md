@@ -41,174 +41,177 @@ package main
 
 import (
     "context"
+    "fmt"
+
+    "exchange-connector/pkg/schema"
     "exchange-connector/pkg/sdk"
-    "exchange-connector/pkg/types"
 )
 
 func main() {
-    // 创建SDK实例
-    sdk := sdk.NewExchangeConnectorSDK()
+    // 1. 创建SDK实例
+    sdkInstance := sdk.NewSDK()
     
-    // 添加交易所（需要实际的交易所实现）
-    // sdk.AddExchange(binanceSpot, 1)
-    
-    // 创建上下文
-    ctx := context.Background()
-    
-    // 订阅WebSocket数据
-    symbols := []string{"BTCUSDT", "ETHUSDT"}
-    sdk.SubscribeTicker(ctx, types.ExchangeBinance, types.MarketSpot, symbols)
-    
-    // 启动WebSocket连接
-    sdk.StartWebSocket(ctx)
-    
-    // 读取订阅的数据
-    if ticker, ok := sdk.WatchTicker(types.MarketSpot, "BTC", "USDT"); ok {
-        fmt.Printf("BTC价格: %.2f\n", ticker.Price)
+    // 2. 配置交易所（权重）
+    if err := sdkInstance.AddExchange(sdk.ExchangeConfig{
+        Name:   schema.BINANCE,
+        Market: schema.SPOT,
+        Weight: 3,
+    }); err != nil {
+        panic(err)
     }
     
-    // 通过REST API获取数据
-    if ticker, err := sdk.FetchTicker(ctx, types.MarketSpot, "BTC", "USDT"); err == nil {
-        fmt.Printf("REST获取BTC价格: %.2f\n", ticker.Price)
+    if err := sdkInstance.AddExchange(sdk.ExchangeConfig{
+        Name:   schema.BINANCE,
+        Market: schema.FUTURESUSDT,
+        Weight: 1,
+    }); err != nil {
+        panic(err)
+    }
+    
+    // 3. 配置币对（支持批量添加）
+    allSymbols := []string{
+        "BTC/USDT",      // 现货
+        "ETH/USDT",      // 现货
+        "BTC/USDT:USDT", // U本位合约
+    }
+    
+    // 4. 使用便捷函数：添加币对并自动订阅WebSocket（一步完成）
+    ctx := context.Background()
+    if err := sdkInstance.AddSymbolsAndSubscribe(ctx, allSymbols); err != nil {
+        panic(err)
+    }
+    
+    // 5. 读取数据（智能识别市场类型和交易所）
+    if kline, ok := sdkInstance.WatchKline("BTC/USDT"); ok {
+        fmt.Printf("现货BTC/USDT K线: 开盘=%s, 最高=%s, 最低=%s, 收盘=%s\n",
+            kline.Open, kline.High, kline.Low, kline.Close)
+    }
+    
+    if depth, ok := sdkInstance.WatchDepth("BTC/USDT:USDT"); ok {
+        fmt.Printf("U本位BTC/USDT:USDT深度: 买单%d档, 卖单%d档\n",
+            len(depth.Bids), len(depth.Asks))
     }
 }
 ```
 
-#### 直接使用Manager
-```go
-package main
 
-import (
-    "context"
-    "exchange-connector/internal/manager"
-    "exchange-connector/pkg/types"
-)
-
-func main() {
-    // 创建管理器
-    mgr := manager.NewManager()
-    
-    // 添加交易所
-    // mgr.AddExchange(binanceSpot, 1)
-    
-    // 订阅数据
-    ctx := context.Background()
-    mgr.SubscribeTickers(ctx, types.ExchangeBinance, types.MarketSpot, []string{"BTCUSDT"})
-    
-    // 启动WebSocket
-    mgr.StartWS(ctx)
-    
-    // 读取数据
-    ticker, ok := mgr.WatchTicker(types.MarketSpot, "BTC", "USDT")
-    if ok {
-        fmt.Printf("价格: %.2f\n", ticker.Price)
-    }
-}
-```
 
 ### 3. 运行示例
 ```bash
-# 运行基础演示
-go run cmd/demo/main.go
-
-# 运行SDK演示
-go run cmd/sdk_demo/main.go
-
-# 运行权重计算演示
-go run cmd/weight_demo/main.go
+# 运行快速开始示例
+cd quick_start
+go run main.go
 ```
 
 ## API 参考
 
 ### SDK 接口
 
-#### 数据订阅
+#### 交易所配置
 ```go
-// 订阅ticker数据
-SubscribeTicker(ctx context.Context, exchange types.ExchangeName, market types.MarketType, symbols []string) error
+// 添加交易所配置
+AddExchange(config ExchangeConfig) error
 
-// 订阅K线数据
-SubscribeKline(ctx context.Context, exchange types.ExchangeName, market types.MarketType, symbols []string, interval types.Interval) error
-
-// 订阅深度数据
-SubscribeDepth(ctx context.Context, exchange types.ExchangeName, market types.MarketType, symbols []string) error
+type ExchangeConfig struct {
+    Name   schema.ExchangeName // 交易所名称
+    Market schema.MarketType   // 市场类型
+    Weight int                 // 权重
+}
 ```
 
-#### WebSocket数据读取
+#### 币对配置和订阅
 ```go
-// 读取ticker数据
-WatchTicker(market types.MarketType, base, quote string) (types.Ticker, bool)
+// 批量添加币对并自动订阅（推荐）
+AddSymbolsAndSubscribe(ctx context.Context, symbols []string) error
 
-// 读取K线数据
-WatchKline(market types.MarketType, base, quote string, interval types.Interval) ([]types.Kline, bool)
-
-// 读取深度数据
-WatchDepth(market types.MarketType, base, quote string) (types.Depth, bool)
+// 支持的币对格式
+// 现货: "BTC/USDT"
+// U本位合约: "BTC/USDT:USDT"  
+// 币本位合约: "BTC/USD:BTC"
 ```
 
-#### REST API数据获取
+#### 数据读取
 ```go
-// 获取ticker数据
-FetchTicker(ctx context.Context, market types.MarketType, base, quote string) (types.Ticker, error)
+// 读取K线数据（自动识别市场类型和交易所）
+WatchKline(symbol string) (schema.Kline, bool)
 
-// 获取K线数据
-FetchKline(ctx context.Context, market types.MarketType, base, quote string, interval types.Interval, limit int) ([]types.Kline, error)
+// 读取深度数据（自动识别市场类型和交易所）
+WatchDepth(symbol string) (schema.Depth, bool)
 
-// 获取深度数据
-FetchDepth(ctx context.Context, market types.MarketType, base, quote string, limit int) (types.Depth, error)
+// 币对格式示例
+// "BTC/USDT"      -> 现货市场
+// "BTC/USDT:USDT" -> U本位合约
+// "ETH/USD:ETH"   -> 币本位合约
 ```
+
+#### 支持的交易所
+- `schema.BINANCE` - Binance
+- `schema.OKX` - OKX
+- `schema.BYBIT` - Bybit
+- `schema.GATE` - Gate
+- `schema.MEXC` - MEXC
 
 
 
 ### 支持的市场类型
-- `types.MarketSpot`: 现货市场
-- `types.MarketFuturesUSDT`: U本位合约市场
-- `types.MarketFuturesCoin`: 币本位合约市场
+- `schema.SPOT` - 现货市场
+- `schema.FUTURESUSDT` - U本位合约市场
+- `schema.FUTURESCOIN` - 币本位合约市场
 
-### 支持的时间间隔
-- `types.Interval1m`: 1分钟
-- `types.Interval3m`: 3分钟
-- `types.Interval5m`: 5分钟
-- `types.Interval15m`: 15分钟
-- `types.Interval30m`: 30分钟
-- `types.Interval1h`: 1小时
-- `types.Interval4h`: 4小时
-- `types.Interval1d`: 1天
+### 币对格式说明
+- **现货**: `BTC/USDT` - 基础币种/计价币种
+- **U本位合约**: `BTC/USDT:USDT` - 基础币种/计价币种:保证金币种
+- **币本位合约**: `BTC/USD:BTC` - 基础币种/计价币种:保证金币种
+
+### 自动市场类型识别
+SDK会根据币对格式自动识别市场类型：
+- 无冒号后缀 → 现货市场
+- 冒号后为计价币种 → U本位合约
+- 冒号后为基础币种 → 币本位合约
 
 ## 架构设计
 
 ### 核心组件
-1. **Manager**: 统一管理所有交易所连接和数据流
-2. **Cache**: 内存缓存，存储订阅的数据
-3. **Exchange**: 交易所接口，支持REST和WebSocket
-4. **SDK**: 简化的API接口，便于用户使用
+1. **SDK**: 高级API接口，提供简化的使用方式（用户使用）
+2. **Manager**: 统一管理所有交易所连接和数据流（内部实现）
+3. **Cache**: 内存缓存，存储订阅的数据（内部实现）
+4. **Exchange**: 交易所接口，支持REST和WebSocket（内部实现）
+5. **SubscriptionManager**: 统一管理所有频道的订阅状态（内部实现）
 
 ### 数据流
 ```
 交易所API → Exchange → Manager → Cache → SDK → 用户应用
 ```
 
-### 权重计算
-系统支持基于交易所权重的价格聚合：
-- 每个交易所可以设置权重
-- 加权价格 = Σ(价格 × 权重) / Σ权重
-- 支持实时计算和缓存
+### 智能数据读取
+- **自动交易所选择**: SDK内置交易所优先级（Binance → OKX → Bybit → Gate → MEXC）
+- **自动市场类型识别**: 根据币对格式自动判断现货/合约类型
+- **统一数据接口**: 使用标准币对格式，无需关心具体交易所实现
 
-- **容错机制**: 某个交易所数据不可用时，其他交易所仍可参与计算
+### 批量订阅优化
+- **分组订阅**: 按交易所和市场类型分组，批量订阅提高效率
+- **增量订阅**: 支持在现有连接上添加新币对，无需重建连接
+- **统一频道管理**: 币对订阅所有频道（K线、深度），统一管理订阅状态
 
 ## 开发指南
 
 ### 添加新交易所
 1. 实现 `interfaces.Exchange` 接口
-2. 实现 `interfaces.RESTClient` 接口
+2. 实现 `interfaces.RESTClient` 接口  
 3. 实现 `interfaces.WSConnector` 接口
-4. 在Manager中注册交易所
+4. 在Manager中注册交易所（内部实现）
+5. 在SDK的`getDefaultExchangeOrder()`中添加交易所优先级
 
 ### 扩展数据类型
-1. 在 `pkg/types/types.go` 中定义新类型
+1. 在 `pkg/schema/` 中定义新的数据结构
 2. 在Cache中添加相应的存储方法
 3. 在Manager中添加相应的处理方法
 4. 在SDK中暴露相应的接口
+
+### 自定义订阅逻辑
+1. 修改 `pkg/sdk/sdk.go` 中的 `autoSubscribe` 方法
+2. 调整交易所分组和批量订阅逻辑
+3. 更新 `getDefaultExchangeOrder()` 中的交易所优先级
 
 ## 测试
 ```bash
@@ -217,7 +220,11 @@ go test ./...
 
 # 运行特定包的测试
 go test ./internal/cache -v
-go test ./internal/manager -v
+go test ./pkg/sdk -v
+
+# 运行快速开始示例
+cd quick_start
+go run main.go
 ```
 
 ## 许可证
