@@ -159,8 +159,6 @@ backup/
 restore/
 
 # Cache directories
-.cache/
-cache/
 
 # Temporary build artifacts
 *.o
