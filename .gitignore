@@ -1,0 +1,177 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build output directories
+bin/
+dist/
+build/
+target/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Coverage reports
+coverage.txt
+coverage.html
+coverage.out
+
+# Benchmark results
+bench.out
+
+# Profiling data
+*.prof
+*.pprof
+
+# Go module cache (optional, uncomment if you want to ignore)
+# pkg/
+
+# Air live reload (if using)
+tmp/
+
+# Delve debugger
+__debug_bin
+
+# Local configuration files
+config.local.yaml
+config.local.yml
+config.local.json
+config.local.toml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Archive files
+*.tar.gz
+*.zip
+*.rar
+
+# Certificate files
+*.pem
+*.key
+*.crt
+*.csr
+
+# Documentation build output
+docs/_build/
+docs/build/
+
+# Node.js (if using for frontend or tooling)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if using for scripts or tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Local development files
+local/
+dev/
+development/
+
+# Test artifacts
+test-results/
+test-output/
+
+# Performance testing
+perf/
+performance/
+
+# Security scanning results
+security-scan-results/
+vulnerability-reports/
+
+# Backup and restore files
+backup/
+restore/
+
+# Cache directories
+.cache/
+cache/
+
+# Temporary build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Go specific
+go.sum.bak
+go.mod.bak
+
+# Project specific
+# Add any project-specific files or directories here
