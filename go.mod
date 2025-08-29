@@ -1,4 +1,4 @@
-module exchange-connector
+module github.com/kingsmao/exchange-connector
 
 go 1.21
 

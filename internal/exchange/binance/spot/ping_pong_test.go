@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"exchange-connector/internal/cache"
-	"exchange-connector/internal/manager"
-	"exchange-connector/pkg/logger"
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/internal/cache"
+	"github.com/kingsmao/exchange-connector/internal/manager"
+	"github.com/kingsmao/exchange-connector/pkg/logger"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 func TestBinanceSpotWS_Connection(t *testing.T) {

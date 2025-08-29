@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"exchange-connector/pkg/logger"
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/pkg/logger"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 // ExchangeInfoCache 管理交易规则信息的内存缓存

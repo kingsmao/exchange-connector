@@ -8,7 +8,7 @@ import (
 	"time"
 	"unsafe"
 
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 // MemoryCache is a threadsafe in-memory store for market data.

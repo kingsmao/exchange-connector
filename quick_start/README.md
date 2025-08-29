@@ -227,8 +227,8 @@ package main
 import (
     "context"
     "fmt"
-    "exchange-connector/pkg/sdk"
-    "exchange-connector/pkg/schema"
+    "github.com/kingsmao/exchange-connector/pkg/sdk"
+    "github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 func main() {

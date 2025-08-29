@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"exchange-connector/internal/manager"
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/internal/manager"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 
 	"github.com/shopspring/decimal"
 )

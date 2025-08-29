@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 const BybitFuturesUSDTBaseURL = "https://api.bybit.com"

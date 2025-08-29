@@ -1,9 +1,9 @@
 package spot
 
 import (
-	"exchange-connector/internal/cache"
-	"exchange-connector/pkg/interfaces"
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/internal/cache"
+	"github.com/kingsmao/exchange-connector/pkg/interfaces"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 // SpotExchange bundles REST and WS for MEXC Spot.

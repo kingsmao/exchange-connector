@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 // 由于createExchange方法无法直接替换，我们测试配置管理逻辑

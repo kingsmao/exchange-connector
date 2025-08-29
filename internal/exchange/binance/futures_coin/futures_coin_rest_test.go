@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"exchange-connector/pkg/logger"
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/pkg/logger"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 func TestBinanceFuturesCoinREST_Depth(t *testing.T) {

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"sync"
 
-	"exchange-connector/internal/cache"
-	"exchange-connector/pkg/interfaces"
-	"exchange-connector/pkg/logger"
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/internal/cache"
+	"github.com/kingsmao/exchange-connector/pkg/interfaces"
+	"github.com/kingsmao/exchange-connector/pkg/logger"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 // ExchangeInfo holds exchange information including weight

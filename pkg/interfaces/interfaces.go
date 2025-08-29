@@ -7,7 +7,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/websocket"
 
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 // SubscriptionManager manages subscription state for WebSocket connections.

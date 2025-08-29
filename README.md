@@ -43,8 +43,8 @@ import (
     "context"
     "fmt"
 
-    "exchange-connector/pkg/schema"
-    "exchange-connector/pkg/sdk"
+    "github.com/kingsmao/exchange-connector/pkg/schema"
+    "github.com/kingsmao/exchange-connector/pkg/sdk"
 )
 
 func main() {

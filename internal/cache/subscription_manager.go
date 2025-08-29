@@ -3,8 +3,8 @@ package cache
 import (
 	"sync"
 
-	"exchange-connector/pkg/interfaces"
-	"exchange-connector/pkg/schema"
+	"github.com/kingsmao/exchange-connector/pkg/interfaces"
+	"github.com/kingsmao/exchange-connector/pkg/schema"
 )
 
 // SubscriptionManagerImpl implements SubscriptionManager interface
