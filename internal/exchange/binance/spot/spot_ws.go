@@ -905,7 +905,7 @@ func (s *SpotWS) StartHealthCheck(ctx context.Context) error {
 	logger.Info("Binance WS 启动健康监控")
 
 	go func() {
-		ticker := time.NewTicker(5 * time.Second) // 每5秒检查一次
+		ticker := time.NewTicker(schema.HealthCheckInterval) // 使用全局配置的健康检查间隔
 		defer ticker.Stop()
 
 		for {
@@ -942,8 +942,8 @@ func (s *SpotWS) checkConnectionHealth(ctx context.Context) {
 	now := time.Now()
 	timeSinceLastMsg := now.Sub(lastMsg)
 
-	// 如果超过30秒没有收到任何消息，认为连接异常
-	if timeSinceLastMsg > 30*time.Second {
+	// 如果超过配置的超时时间没有收到任何消息，认为连接异常
+	if timeSinceLastMsg > schema.WebSocketTimeout {
 		logger.Warn("Binance WS 长时间未收到消息 (%.2f秒)，重连次数: %d，尝试重连",
 			timeSinceLastMsg.Seconds(), reconnectCount)
 		s.attemptReconnect(ctx)
@@ -969,9 +969,13 @@ func (s *SpotWS) attemptReconnect(ctx context.Context) {
 	s.Close()
 
 	// 等待一段时间再重连，避免过于频繁
-	waitTime := time.Duration(reconnectCount) * time.Second
-	if waitTime > 30*time.Second {
-		waitTime = 30 * time.Second
+	// 前N次：1秒、2秒、3秒...N秒递增
+	// 超过N次后：固定最大等待时间间隔
+	var waitTime time.Duration
+	if reconnectCount <= schema.ReconnectThreshold {
+		waitTime = time.Duration(reconnectCount) * time.Second
+	} else {
+		waitTime = schema.MaxReconnectWaitTime
 	}
 
 	logger.Warn("Binance WS 等待 %.0f 秒后重连", waitTime.Seconds())

@@ -28,9 +28,9 @@ const (
 	channelKline = "kline"       // @250ms
 	channelDepth = "depth@500ms" // 默认@250ms, 可选@100ms, @500ms (为什么不用@250? 因为盘口闪烁太频繁效果反而不好)
 
-	pingInterval = 30 * time.Second
-	pongWait     = 60 * time.Second
-	writeWait    = 10 * time.Second
+	// 使用全局配置的健康检查间隔
+	pongWait  = 60 * time.Second
+	writeWait = 10 * time.Second
 )
 
 type binanceSubscriptionMessage struct {
@@ -56,6 +56,10 @@ type FuturesCoinWS struct {
 	ctx                context.Context
 	cancel             context.CancelFunc
 	healthCheckStarted bool
+
+	// 重连相关
+	reconnectCount int
+	reconnectMu    sync.RWMutex
 }
 
 func NewFuturesCoinWS(cache *cache.MemoryCache, subs interfaces.SubscriptionManager, rest interfaces.RESTClient) *FuturesCoinWS {
@@ -828,7 +832,7 @@ func (f *FuturesCoinWS) buildDepthFromOrderBook(symbol string) *schema.Depth {
 }
 
 func (f *FuturesCoinWS) StartHealthCheck(ctx context.Context) error {
-	ticker := time.NewTicker(pingInterval)
+	ticker := time.NewTicker(schema.HealthCheckInterval)
 	defer ticker.Stop()
 
 	for {
@@ -924,7 +928,12 @@ func (f *FuturesCoinWS) HandlePing(data []byte) error {
 }
 
 func (f *FuturesCoinWS) reconnect() {
-	logger.Info("Binance Futures Coin WS 开始重连...")
+	f.reconnectMu.Lock()
+	f.reconnectCount++
+	reconnectCount := f.reconnectCount
+	f.reconnectMu.Unlock()
+
+	logger.Warn("Binance Futures Coin WS 开始重连 (第%d次)", reconnectCount)
 
 	f.mu.Lock()
 	if f.conn != nil {
@@ -933,8 +942,18 @@ func (f *FuturesCoinWS) reconnect() {
 	}
 	f.mu.Unlock()
 
-	// Wait a bit before reconnecting
-	time.Sleep(5 * time.Second)
+	// 等待一段时间再重连，避免过于频繁
+	// 前N次：1秒、2秒、3秒...N秒递增
+	// 超过N次后：固定最大等待时间间隔
+	var waitTime time.Duration
+	if reconnectCount <= schema.ReconnectThreshold {
+		waitTime = time.Duration(reconnectCount) * time.Second
+	} else {
+		waitTime = schema.MaxReconnectWaitTime
+	}
+
+	logger.Warn("Binance Futures Coin WS 等待 %.0f 秒后重连", waitTime.Seconds())
+	time.Sleep(waitTime)
 
 	// Try to reconnect
 	if err := f.Connect(f.ctx); err != nil {
@@ -943,7 +962,15 @@ func (f *FuturesCoinWS) reconnect() {
 		time.AfterFunc(30*time.Second, func() {
 			f.reconnect()
 		})
+		return
 	}
+
+	logger.Info("Binance Futures Coin WS 重连成功")
+
+	// 重连成功，重置计数器
+	f.reconnectMu.Lock()
+	f.reconnectCount = 0
+	f.reconnectMu.Unlock()
 }
 
 // Helper function to get all symbols (this should be replaced with actual symbol management)

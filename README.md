@@ -26,11 +26,18 @@
 - **REST API调用**: 按需获取数据，适合低频查询
 - **SDK接口**: 简化的API接口，易于集成
 
+### 🔄 WebSocket重连机制
+- **自动重连**: 连接断开时自动检测并重连
+- **智能退避**: 前30次重连使用递增间隔（1秒到30秒），超过30次后固定30秒间隔
+- **无限重连**: 永不放弃，持续尝试恢复连接
+- **订阅恢复**: 重连成功后自动重新订阅之前的所有币对数据
+- **健康监控**: 每1秒检查连接状态，30秒无消息自动重连（可配置）
+
 ## 快速开始
 
 ### 1. 安装依赖
 ```bash
-go mod tidy
+go get github.com/kingsmao/exchange-connector
 ```
 
 ### 2. 基本使用
@@ -48,49 +55,88 @@ import (
 )
 
 func main() {
-    // 1. 创建SDK实例
-    sdkInstance := sdk.NewSDK()
-    
-    // 2. 配置交易所（权重）
-    if err := sdkInstance.AddExchange(sdk.ExchangeConfig{
-        Name:   schema.BINANCE,
-        Market: schema.SPOT,
-        Weight: 3,
-    }); err != nil {
-        panic(err)
-    }
-    
-    if err := sdkInstance.AddExchange(sdk.ExchangeConfig{
-        Name:   schema.BINANCE,
-        Market: schema.FUTURESUSDT,
-        Weight: 1,
-    }); err != nil {
-        panic(err)
-    }
-    
-    // 3. 配置币对（支持批量添加）
-    allSymbols := []string{
-        "BTC/USDT",      // 现货
-        "ETH/USDT",      // 现货
-        "BTC/USDT:USDT", // U本位合约
-    }
-    
-    // 4. 使用便捷函数：添加币对并自动订阅WebSocket（一步完成）
-    ctx := context.Background()
-    if err := sdkInstance.AddSymbolsAndSubscribe(ctx, allSymbols); err != nil {
-        panic(err)
-    }
-    
-    // 5. 读取数据（智能识别市场类型和交易所）
-    if kline, ok := sdkInstance.WatchKline("BTC/USDT"); ok {
-        fmt.Printf("现货BTC/USDT K线: 开盘=%s, 最高=%s, 最低=%s, 收盘=%s\n",
-            kline.Open, kline.High, kline.Low, kline.Close)
-    }
-    
-    if depth, ok := sdkInstance.WatchDepth("BTC/USDT:USDT"); ok {
-        fmt.Printf("U本位BTC/USDT:USDT深度: 买单%d档, 卖单%d档\n",
-            len(depth.Bids), len(depth.Asks))
-    }
+	// 1. 创建SDK实例
+	sdkInstance := sdk.NewSDK()
+
+	// 2. 配置交易所（权重）
+	if err := sdkInstance.AddExchange(sdk.ExchangeConfig{
+		Name:   schema.BINANCE,
+		Market: schema.SPOT,
+		Weight: 3,
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := sdkInstance.AddExchange(sdk.ExchangeConfig{
+		Name:   schema.BINANCE,
+		Market: schema.FUTURESUSDT,
+		Weight: 1,
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := sdkInstance.AddExchange(sdk.ExchangeConfig{
+		Name:   schema.BINANCE,
+		Market: schema.FUTURESCOIN,
+		Weight: 1,
+	}); err != nil {
+		panic(err)
+	}
+
+	// 3. 配置币对（支持批量添加）
+	allSymbols := []string{
+		"BTC/USDT",      // 现货
+		"ETH/USDT:USDT", // U本位合约
+		"SOL/USD:SOL",   // 币本位合约
+	}
+
+	// 4. 使用便捷函数：添加币对并自动订阅WebSocket（一步完成）
+	ctx := context.Background()
+	if err := sdkInstance.AddSymbolsAndSubscribe(ctx, allSymbols); err != nil {
+		panic(err)
+	}
+
+	// 创建定时器，每3秒执行一次
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	// 创建退出信号通道
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	for {
+		select {
+		case <-ticker.C:
+			// 5. 读取数据（智能识别市场类型和交易所）
+			if kline, ok := sdkInstance.WatchKline("BTC/USDT"); ok {
+				fmt.Printf("现货BTC/USDT K线: 开盘=%s, 最高=%s, 最低=%s, 收盘=%s\n",
+					kline.Open, kline.High, kline.Low, kline.Close)
+			}
+			if depth, ok := sdkInstance.WatchDepth("BTC/USDT"); ok {
+				fmt.Printf("现货BTC/USDT 深度: 买单%d档, 卖单%d档, 买一:%s@%s, 卖一:%s@%s\n",
+					len(depth.Bids), len(depth.Asks), depth.Bids[0].Price, depth.Bids[0].Quantity, depth.Asks[0].Price, depth.Asks[0].Quantity)
+			}
+			if kline, ok := sdkInstance.WatchKline("ETH/USDT:USDT"); ok {
+				fmt.Printf("U本位合约ETH/USDT K线: 开盘=%s, 最高=%s, 最低=%s, 收盘=%s\n",
+					kline.Open, kline.High, kline.Low, kline.Close)
+			}
+			if depth, ok := sdkInstance.WatchDepth("ETH/USDT:USDT"); ok {
+				fmt.Printf("U本位合约ETH/USDT 深度: 买单%d档, 卖单%d档, 买一:%s@%s, 卖一:%s@%s\n",
+					len(depth.Bids), len(depth.Asks), depth.Bids[0].Price, depth.Bids[0].Quantity, depth.Asks[0].Price, depth.Asks[0].Quantity)
+			}
+			if kline, ok := sdkInstance.WatchKline("SOL/USD:SOL"); ok {
+				fmt.Printf("币本位合约SOL/USD K线: 开盘=%s, 最高=%s, 最低=%s, 收盘=%s\n",
+					kline.Open, kline.High, kline.Low, kline.Close)
+			}
+			if depth, ok := sdkInstance.WatchDepth("SOL/USD:SOL"); ok {
+				fmt.Printf("币本位合约SOL/USD 深度: 买单%d档, 卖单%d档, 买一:%s@%s, 卖一:%s@%s\n",
+					len(depth.Bids), len(depth.Asks), depth.Bids[0].Price, depth.Bids[0].Quantity, depth.Asks[0].Price, depth.Asks[0].Quantity)
+			}
+
+			fmt.Println("---")
+		}
+	}
+
 }
 ```
 
@@ -213,6 +259,17 @@ BTC/USD:BTC
 - **自动市场类型识别**: 根据币对格式自动判断现货/合约类型
 - **统一数据接口**: 使用标准币对格式，无需关心具体交易所实现
 
+### 连接可靠性
+- **自动重连**: WebSocket连接断开时自动重连，无需人工干预
+- **订阅状态管理**: 维护所有币对的订阅状态，重连后自动恢复
+- **健康检查**: 定期监控连接状态，及时发现问题并重连
+- **错误隔离**: 单个交易所的问题不影响其他交易所的正常运行
+
+### 系统配置
+- **全局常量**: 健康检查间隔、重连阈值等配置集中在 `pkg/schema/constants.go` 中
+- **易于维护**: 修改配置只需更新常量文件，无需修改多个交易所实现
+- **统一标准**: 所有交易所使用相同的配置参数，保持一致性
+
 ### 批量订阅优化
 - **分组订阅**: 按交易所和市场类型分组，批量订阅提高效率
 - **增量订阅**: 支持在现有连接上添加新币对，无需重建连接
@@ -226,6 +283,13 @@ BTC/USD:BTC
 3. 实现 `interfaces.WSConnector` 接口
 4. 在Manager中注册交易所（内部实现）
 5. 在SDK的`getDefaultExchangeOrder()`中添加交易所优先级
+
+**WebSocket重连要求**:
+- 实现 `StartHealthCheck()` 方法进行连接健康监控
+- 实现自动重连逻辑，支持无限重试
+- 重连成功后自动恢复之前的订阅状态
+- 使用智能退避算法避免频繁重连
+- 使用全局常量 `schema.HealthCheckInterval`、`schema.ReconnectThreshold` 等
 
 ### 扩展数据类型
 1. 在 `pkg/schema/` 中定义新的数据结构
